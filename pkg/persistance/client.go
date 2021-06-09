@@ -5,6 +5,8 @@ import (
 )
 
 type Repository interface {
+	InsertFilm(film Film)
+	GetLatestFilm(channelID string) Film
 }
 
 type client struct {
@@ -20,4 +22,12 @@ func NewClient(address, password string) client {
 	})
 
 	return cli
+}
+
+func (c client) InsertFilm(film Film) {
+
+}
+
+func (c client) GetLatestFilm(channelID string) Film {
+	return Film{}
 }

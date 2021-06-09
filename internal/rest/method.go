@@ -8,7 +8,31 @@ import (
 	"time"
 )
 
-func GetListResponse(apiURL, apiKey, channelID string, publishedAfter time.Time) (ListResponse, error) {
+const (
+	firstPageToken = ""
+	lastPageToken  = ""
+)
+
+func GetAllFilmsAfter(apiURL, apiKey, channelID string, publishedAfter time.Time) ([]ListResponse, error) {
+	allFilms := []ListResponse{}
+	singleListResponse, err := GetListResponse(apiURL, apiKey, channelID, firstPageToken, publishedAfter)
+	if err != nil {
+		return allFilms, err
+	}
+
+	allFilms = append(allFilms, singleListResponse)
+
+	for singleListResponse.NextPageToken != lastPageToken {
+		singleListResponse, err = GetListResponse(apiURL, apiKey, channelID, singleListResponse.NextPageToken, publishedAfter)
+		if err != nil {
+			return allFilms, err
+		}
+		allFilms = append(allFilms, singleListResponse)
+	}
+	return allFilms, nil
+}
+
+func GetListResponse(apiURL, apiKey, channelID, pageToken string, publishedAfter time.Time) (ListResponse, error) {
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
 		return ListResponse{}, err
@@ -19,6 +43,9 @@ func GetListResponse(apiURL, apiKey, channelID string, publishedAfter time.Time)
 	q.Add("order", "date")
 	q.Add("type", "video")
 	q.Add("maxResults", "50")
+	if pageToken != "" {
+		q.Add("pageToken", pageToken)
+	}
 	q.Add("publishedAfter", publishedAfter.Format(time.RFC3339))
 	q.Add("key", apiKey)
 	q.Add("channelId", channelID)
