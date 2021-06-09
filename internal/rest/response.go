@@ -1,8 +1,11 @@
 package rest
 
+import "time"
+
 type ListResponse struct {
 	Kind          string   `json:"kind"`
 	Etag          string   `json:"etag"`
+	PrevPageToken string   `json:"prevPageToken"`
 	NextPageToken string   `json:"nextPageToken`
 	RegionCode    string   `json:"regionCode"`
 	PageInfo      PageInfo `json:"pageInfo"`
@@ -27,14 +30,14 @@ type Id struct {
 }
 
 type Snippet struct {
-	PublishedAt          string
+	PublishedAt          time.Time
 	ChannelId            string
 	Title                string
 	Description          string
 	Thumbnails           Thumbnails
 	ChannelTitle         string
 	LiveBroadcastContent string
-	PublishTime          string
+	PublishTime          time.Time
 }
 
 type Thumbnails struct {

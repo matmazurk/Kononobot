@@ -17,7 +17,8 @@ FROM alpine:latest
 
 RUN adduser --disabled-password --no-create-home --gecos '' user
 RUN apk update \
-    && apk --no-cache add ca-certificates
+    && apk --no-cache add ca-certificates \
+    && apk add --no-cache tzdata
 
 RUN mkdir /app && chown user:user /app
 WORKDIR /app
