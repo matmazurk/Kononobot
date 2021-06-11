@@ -6,3 +6,5 @@ services:
     environment:
       API_KEY: "$API_KEY"
       API_URL: "$API_URL"
+  redis:
+    image: "redis:alpine"

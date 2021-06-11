@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/matmazurk/Kononobot/internal/rest"
@@ -23,18 +24,26 @@ type Config struct {
 	ApiKey string `env:"API_KEY"`
 }
 
-type Service struct {
+type service struct {
 	config Config
 	db     persistance.Repository
 }
 
-func (s Service) Run() {
-
+func NewService(config Config, db persistance.Repository) service {
+	return service{
+		config: config,
+		db:     db,
+	}
 }
 
-func (s Service) insertAllFilmsForEachChannel() {
+func (s service) Run() {
+	ctx := context.Background()
+	s.insertAllFilmsForEachChannel(ctx)
+}
+
+func (s service) insertAllFilmsForEachChannel(ctx context.Context) {
 	for _, channelID := range channels {
-		latestFilm := s.db.GetLatestFilm(channelID)
+		latestFilm := s.db.GetLatestFilm(ctx, channelID)
 		remainingFilms, err := rest.GetAllFilmsAfter(s.config.ApiURL, s.config.ApiKey, channelID, latestFilm.PublishTime)
 		if err != nil {
 			fmt.Println(err)
@@ -51,7 +60,7 @@ func (s Service) insertAllFilmsForEachChannel() {
 					ChannelTitle: film.Snippet.ChannelId,
 					PublishTime:  film.Snippet.PublishTime,
 				}
-				s.db.InsertFilm(persFilm)
+				s.db.InsertFilm(ctx, persFilm)
 			}
 		}
 	}

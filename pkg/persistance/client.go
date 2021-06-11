@@ -1,12 +1,15 @@
 package persistance
 
 import (
+	"context"
+	"encoding/json"
+
 	"github.com/go-redis/redis/v8"
 )
 
 type Repository interface {
-	InsertFilm(film Film)
-	GetLatestFilm(channelID string) Film
+	InsertFilm(ctx context.Context, film Film) error
+	GetLatestFilm(ctx context.Context, channelID string) (Film, error)
 }
 
 type client struct {
@@ -24,10 +27,16 @@ func NewClient(address, password string) client {
 	return cli
 }
 
-func (c client) InsertFilm(film Film) {
-
+func (c client) InsertFilm(ctx context.Context, film Film) error {
+	key := film.ID
+	value, err := json.Marshal(film)
+	if err != nil {
+		return err
+	}
+	err = c.Set(ctx, key, value, 0).Err()
+	return err
 }
 
-func (c client) GetLatestFilm(channelID string) Film {
-	return Film{}
+func (c client) GetLatestFilm(ctx context.Context, channelID string) (Film, error) {
+	return Film{}, nil
 }
