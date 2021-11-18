@@ -1,28 +1,62 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"os"
+	"time"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/matmazurk/Kononobot/internal/handlers"
+	"github.com/matmazurk/Kononobot/internal/services"
+	"github.com/matmazurk/Kononobot/pkg/persistence"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	env "github.com/Netflix/go-env"
-	"github.com/matmazurk/Kononobot/internal/scraper"
-	"github.com/matmazurk/Kononobot/pkg/persistance"
 )
 
 type Config struct {
-	ApiURL    string `env:"API_URL"`
-	ApiKey    string `env:"API_KEY"`
-	RedisURL  string `env:"REDIS_URL"`
-	RedisPort int    `env:"REDIS_PORT"`
+	ApiKey string `env:"API_KEY"`
+	DbDns  string `env:"DB_DNS"`
 }
 
 func main() {
-	var config Config
-	_, err := env.UnmarshalFromEnviron(&config)
+	var cfg Config
+	_, err := env.UnmarshalFromEnviron(&cfg)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal().Err(err).Msg("cannot unmarshal config from env")
 	}
-	db := persistance.NewClient(config.RedisURL, "")
-	scraper := scraper.NewService(scraper.Config{config.ApiURL, config.ApiKey}, db)
-	scraper.Run()
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	log.Info().Msg("kononobot starting...")
+
+	db := connectToPostgresDB(context.Background(), cfg.DbDns)
+	pgClient := persistence.NewPostgresClient(db)
+	ytHandler := handlers.NewYT(cfg.ApiKey)
+	kbotService := services.NewKBot(ytHandler, pgClient)
+	err = kbotService.Serve()
+	if err != nil {
+		log.Error().Err(err).Msg("kononobot service returned with error")
+	}
+}
+
+func connectToPostgresDB(ctx context.Context, dns string) *sqlx.DB {
+	db, err := sqlx.Open("postgres", dns)
+	if err != nil {
+		log.Fatal().Err(err).Msg("cannot connect to db")
+	}
+
+	for i := 0; i < 10; i++ {
+		err = db.Ping()
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+		log.Info().Int("ping_counter", i).Msg("pinging database...")
+	}
+
+	if err != nil {
+		log.Fatal().Err(err).Msg("didn't connect to db")
+	}
+	log.Info().Msg("postgres connection established")
+	return db
 }

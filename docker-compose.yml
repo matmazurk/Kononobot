@@ -1,10 +1,28 @@
 version: "3"
 
 services:
-  scraper:
-    image: scraper
-    environment:
-      API_KEY: "$API_KEY"
-      API_URL: "$API_URL"
-  redis:
-    image: "redis:alpine"
+  kononobot-service:
+    build:
+      context: .
+      dockerfile: Scraper.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+  postgres:
+    image: "postgres"
+    hostname: "${POSTGRES_HOSTNAME}"
+    volumes:
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    ports:
+      - 5432:5432
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+volumes:
+  docker-entrypoint-initdb.d:
