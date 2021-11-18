@@ -20,9 +20,17 @@ func NewPostgresClient(db *sqlx.DB) pgClient {
 	}
 }
 
-func (p pgClient) InsertChannel(ctx context.Context, id, title string) error {
-	q := "INSERT INTO channels (channel_id, title) VALUES ($1, $2)"
-	_, err := p.ExecContext(ctx, q, id, title)
+func (p pgClient) InsertChannel(
+	ctx context.Context,
+	id, title string,
+	viewCount int64,
+	subscriberCount, videoCount int32,
+) error {
+	q := `
+		INSERT INTO channels (channel_id, title, view_count, subscriber_count, video_count) 
+			VALUES ($1, $2, $3, $4, $5)
+	`
+	_, err := p.ExecContext(ctx, q, id, title, viewCount, subscriberCount, videoCount)
 	if err != nil {
 		log.Error().Err(err).Msg("cannot insert channel to db")
 		return err

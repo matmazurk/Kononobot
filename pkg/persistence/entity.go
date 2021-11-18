@@ -3,8 +3,11 @@ package persistence
 import "time"
 
 type Channel struct {
-	Id    string `db:"channel_id"`
-	Title string `db:"title"`
+	Id              string `db:"channel_id"`
+	Title           string `db:"title"`
+	ViewCount       int64  `db:"view_count"`
+	SubscriberCount int32  `db:"subscriber_count"`
+	VideoCount      int32  `db:"video_count"`
 }
 
 type Film struct {
